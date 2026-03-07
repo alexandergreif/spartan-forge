@@ -1,0 +1,12 @@
+# spartan-forge repository mappings
+# Format: <agent-group>  <path-to-repo>
+# Use "generic" for the generic FDE team, or a project name for project-specific agents.
+# Paths support ~ for home directory.
+#
+# Copy this file to .repos.conf and fill in your local paths.
+# .repos.conf is gitignored — never commit it.
+
+# Examples:
+# generic              ~/projects/my-side-project
+# my-client-project    ~/work/client/their-repo
+# finding-memo         ~/PycharmProjects/finding-memo

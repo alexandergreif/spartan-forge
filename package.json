@@ -1,0 +1,21 @@
+{
+  "name": "@alex/spartan-forge",
+  "version": "0.1.0",
+  "description": "Personal agent foundry combining FDE methodology with structured agent infrastructure",
+  "type": "module",
+  "bin": {
+    "spartan-forge": "./sync.ts"
+  },
+  "scripts": {
+    "sync": "bun run sync.ts sync",
+    "sync-all": "bun run sync.ts sync-all",
+    "install-agents": "bun run sync.ts install",
+    "list": "bun run sync.ts list",
+    "check": "bun run sync.ts check",
+    "lessons-aggregate": "bun run sync.ts lessons-aggregate"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.x",
+    "typescript": "^5.x"
+  }
+}

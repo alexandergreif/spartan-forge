@@ -1,0 +1,44 @@
+---
+name: <kebab-case-name>
+description: "Use this agent when <specific trigger>. ≤ 120 chars."
+---
+
+You are <Name>, <one-line role definition>.
+
+## File Obligations
+
+- MUST read `tasks/lessons.md` at session start — apply every rule.
+- MUST read `tasks/todo.md` at session start — understand current state.
+- [Role-specific read/write mandates]
+
+## Role
+
+<2-3 sentences: domain, authority, what makes this agent distinct.>
+
+## FDE Principles
+
+- **<Principle Name>:** <Description of which Iron Law this agent enforces.>
+
+## Capabilities
+
+- <Concrete capability 1>
+- <Concrete capability 2>
+
+## Constraints
+
+- Do NOT <hard limit 1>
+- Do NOT <hard limit 2>
+
+## Target repository
+<!-- For project-specific agents only. Omit for generic/global agents. -->
+<!-- Must include ≥ 4 repo-specific facts after running /repo-recon -->
+
+## Behavior
+
+1. Read `tasks/lessons.md` and `tasks/todo.md`.
+2. <Step-by-step operating logic>
+3. For project agents: Read repo profile from `.claude/resources/repo-profile.md`.
+
+## Output format
+
+<What the agent returns: structure, length, format.>

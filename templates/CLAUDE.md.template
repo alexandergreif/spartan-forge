@@ -1,0 +1,82 @@
+# Project Overview
+
+<!-- Describe this repo's purpose, tech stack, and key architecture after first sync. -->
+
+## Agents
+
+Role agents in `.claude/agents/` are synced from spartan-forge. **Never edit them here.**
+Edit in the foundry and re-sync.
+
+| Role | Responsibility | FDE Principle |
+|------|---------------|---------------|
+| **planner** | Breaks down tasks, writes contracts (C-DAD), owns `tasks/todo.md` | Contract-Driven AI Development |
+| **developer** | Implements against contracts, fixes bugs autonomously | Contract Adherence, Minimal Impact |
+| **tester** | Writes tests with TDD (Red → Green → Refactor) | Iron Law of TDD |
+| **reviewer** | Adversarial code review, catches security/perf/correctness issues | Adversarial Review |
+| **documenter** | Updates docs after implementation is approved | Observed Reality |
+
+## Session Start — MANDATORY
+
+Before doing ANYTHING at the start of every session:
+
+1. **Read `tasks/lessons.md`** — apply every rule. No exceptions.
+2. **Read `tasks/todo.md`** — understand current state before acting.
+3. **Read `tasks/notes.md`** — check for active architecture decisions.
+
+Skipping this protocol is not permitted under any circumstances.
+
+## Writing Obligations — MANDATORY
+
+| Trigger | Action |
+|---------|--------|
+| Before any implementation | Planner writes contract + `[ ]` items to `tasks/todo.md` |
+| After completing a task | Planner marks `[x]` in `tasks/todo.md` |
+| After any user correction | Agent MUST append new rule to `tasks/lessons.md` |
+| After discovering a pattern | MUST append to `tasks/lessons.md` immediately |
+| Architecture decisions | MUST write to `tasks/notes.md` |
+
+## FDE Iron Laws
+
+These laws are non-negotiable for every agent:
+
+1. **Socratic Gate:** Never implement without understanding. Ask clarifying questions.
+2. **C-DAD:** Define contracts (Zod/OpenAPI/Prisma) before writing implementation code.
+3. **TDD:** Red → Green → Refactor. No code is done without test coverage.
+4. **Planning-with-Files:** All plans in `tasks/todo.md`. All decisions in `tasks/notes.md`.
+5. **Lessons-First:** Read `tasks/lessons.md` at session start. Write to it after corrections.
+
+## Agent Workflow
+
+1. **Planner** clarifies requirements, writes contract, creates task checklist
+2. **Developer** implements against the contract — no hand-holding
+3. **Tester** proves it works: TDD sequence (Red → Green → Refactor)
+4. **Reviewer** adversarial review: security, performance, correctness, contract compliance
+5. **Documenter** updates docs to match what was actually built
+6. All agents append learnings to `tasks/lessons.md`
+7. Planner marks items done, picks next
+
+## Workflow Principles
+
+### Plan Node Default
+Enter plan mode for any non-trivial task (3+ steps). Write specs to `tasks/todo.md`.
+Check with user before starting. If stuck: STOP and re-plan.
+
+### Subagent Strategy
+Use subagents liberally to keep main context clean. One task per subagent.
+
+### Self-Improvement Loop
+After ANY user correction: update `tasks/lessons.md`. Review it at session start.
+
+### Verification Before Done
+Never mark complete without proving it works. Run tests. Check logs. Ask:
+"Would a staff engineer approve this?"
+
+### Autonomous Bug Fixing
+Given a bug: just fix it. Read logs, identify root cause, resolve. No hand-holding.
+
+## Core Principles
+
+- **Simplicity First:** Minimal code impact. Don't over-engineer.
+- **No Laziness:** Find root causes. No temporary fixes.
+- **Minimal Impact:** Touch only what's necessary.
+- **Foundry Discipline:** Agents are owned by spartan-forge. Never patch locally.
