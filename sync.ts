@@ -66,6 +66,24 @@ function syncRepo(group: string, targetPath: string) {
   }
 }
 
+// --- SETUP: install globals + optionally sync a repo (all-in-one) ---
+function setup(args: string[]) {
+  install();
+
+  if (args.length === 0) {
+    console.log("\n✅ Global install complete. Run 'bun run sync.ts setup <path>' to also set up a project.");
+    return;
+  }
+
+  // setup <path>  → sync generic into <path>
+  // setup <group> <path>  → sync <group> into <path>
+  if (args.length === 1) {
+    syncRepo("generic", args[0]);
+  } else {
+    syncRepo(args[0], args[1]);
+  }
+}
+
 // --- INSTALL: deploy global agents + commands to ~/.claude/ ---
 function install() {
   const home = Bun.env.HOME!;
@@ -195,6 +213,10 @@ function loadRepos(): Array<{ repo: string; path: string }> {
 const [,, command, ...args] = process.argv;
 
 switch (command) {
+  case "setup":
+    setup(args);
+    break;
+
   case "sync":
     if (args.length !== 2) {
       console.error("Usage: spartan-forge sync <agent-group> <path>");
@@ -235,11 +257,13 @@ switch (command) {
 
   default:
     console.error("Usage:");
-    console.error("  spartan-forge sync <agent-group> <path>    # Sync agents into a repo");
-    console.error("  spartan-forge sync-all                     # Sync all repos in .repos.conf");
-    console.error("  spartan-forge install                      # Install global agents + commands to ~/.claude/");
-    console.error("  spartan-forge list                         # List available agent groups");
-    console.error("  spartan-forge check <agent-group>          # Check agent group vs repo profile");
-    console.error("  spartan-forge lessons-aggregate            # Aggregate lessons from all repos");
+    console.error("  sync.ts setup [path]                       # Install global + optionally sync generic into <path>");
+    console.error("  sync.ts setup <agent-group> <path>         # Install global + sync specific group into <path>");
+    console.error("  sync.ts install                            # Install global agents + commands to ~/.claude/");
+    console.error("  sync.ts sync <agent-group> <path>          # Sync agents into a repo");
+    console.error("  sync.ts sync-all                           # Sync all repos in .repos.conf");
+    console.error("  sync.ts list                               # List available agent groups");
+    console.error("  sync.ts check <agent-group>                # Check agent group vs repo profile");
+    console.error("  sync.ts lessons-aggregate                  # Aggregate lessons from all repos");
     process.exit(1);
 }
