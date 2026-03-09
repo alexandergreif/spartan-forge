@@ -248,9 +248,12 @@ Jeder Agent schreibt beim Übergeben eine strukturierte Handoff-Note in `tasks/n
 
 ---
 
-## 6. Leonidas — der Meta-Agent
+## 6. Leonidas — der Meta-Agent & Runtime Orchestrator
 
-Leonidas ist der **einzige Agent**, der Agenten erstellen oder modifizieren darf. Er ist die Qualitätskontrolle für die gesamte Foundry.
+Leonidas hat zwei Aufgaben:
+
+1. **Autor** — der einzige Agent, der Agenten erstellen oder modifizieren darf. Qualitätskontrolle für die gesamte Foundry.
+2. **Runtime Orchestrator** — wenn `/fde-workflow` aufgerufen wird, spawnt Leonidas jeden FDE-Agenten als sequenziellen Subagenten, validiert STATUS-Zeilen zwischen den Phasen und injiziert Global-Spezialisten deterministisch.
 
 **Aufrufen:** Der Leonidas-Agent ist in `.claude/leonidas.md` definiert und wird in Claude Code als Agent verfügbar wenn du in spartan-forge arbeitest.
 
@@ -259,6 +262,7 @@ Leonidas ist der **einzige Agent**, der Agenten erstellen oder modifizieren darf
 - Führt zuerst `/repo-recon` gegen das Ziel-Repo aus
 - Prüft jeden Agenten gegen eine 12-Punkte-Quality-Checklist
 - Updated `CLAUDE.md` und `CHANGELOG.md` nach jeder Änderung
+- Orchestriert die FDE-Pipeline via sequenzieller Agent-Tool-Calls
 
 **Die 12-Punkte-Checklist (alle müssen grün sein):**
 1. Frontmatter: genau `name` + `description`, beide vorhanden
@@ -304,17 +308,32 @@ Slash Commands sind vordefinierte Workflows, die du direkt in Claude Code eingeb
 
 ### `/fde-workflow`
 
-**Was es ist:** Der Haupt-Orchestrator. Startet den vollständigen FDE-Prozess für ein neues Feature oder Projekt.
+**Was es ist:** Der Haupt-Orchestrator. Leonidas führt die komplette FDE-Pipeline aus, indem er **jeden FDE-Agenten als echten Subagenten** sequenziell spawnt — keine Rollensimulation, keine Abkürzungen.
 
-**Phasen:**
-1. **Requirements & Socratic Gate** — Unterdrückt Code-Generierung, stellt 3–5 klärende Fragen
-2. **System Design & Taktische Planung** — Erstellt `task_plan.md` mit Checkbox-Liste, erstellt `notes.md`
-3. **Contract-First Spawning** — Definiert Zod/OpenAPI/Prisma-Vertrag, optional Agent Teams für Parallelisierung
-4. **Implementierung & TDD** — Abarbeitung der Checkliste, Tests zuerst (Red → Green)
-5. **Autonome Qualitätssicherung** — Visuelles Testing, systematisches Debugging
-6. **Abschluss & Handover** — Finaler Review-Lauf, Conventional Commit, Status-Meldung
+**Wie es funktioniert:**
 
-**Wann nutzen:** Wenn du ein neues Feature oder Projekt starten willst und den kompletten Qualitätsprozess durchlaufen möchtest.
+```
+Leonidas (aktuelle Session, Orchestrator)
+  ├── Phase 0: Socratic Gate (inline — Leonidas stellt Klärungsfragen)
+  ├── Phase 1: Anforderungen in tasks/notes.md schreiben
+  ├── Phase 2: @fde-planner spawnen → STATUS: READY_FOR_DEVELOPER validieren
+  ├── Phase 3: [Optional: security-auditor / database-admin / ui-ux-designer]
+  ├── Phase 4: @fde-developer spawnen → STATUS: READY_FOR_TESTER validieren
+  ├── Phase 5: [Optional: expert-troubleshooter bei BUILD_FAILED]
+  ├── Phase 6: @fde-tester spawnen → STATUS: TESTS_PASSING validieren
+  ├── Phase 7: [Optional: test-automator bei INFRA_MISSING]
+  ├── Phase 8: @fde-reviewer spawnen → Verdict: APPROVE validieren
+  └── Phase 9: @fde-documenter spawnen → finales Cleanup
+```
+
+Jeder Agent schreibt eine maschinenlesbare **STATUS-Zeile** in `tasks/notes.md`. Leonidas liest diese, bevor er den nächsten Agenten spawnt — meldet ein Agent `BLOCKED` oder `BUILD_FAILED`, hält die Pipeline an und zeigt das Problem dem User. Ein `REQUEST_CHANGES`-Verdict vom Reviewer pausiert immer für eine menschliche Entscheidung; Leonidas fixt niemals automatisch.
+
+**Automatische Spezialist-Injektion** basierend auf dem Vertrags-Inhalt:
+- Auth/JWT/OAuth im Vertrag → `security-auditor` nach dem Planner
+- DB-Operationen → `database-admin` nach dem Planner
+- UI/React-Arbeit → `ui-ux-designer` nach dem Planner
+
+**Wann nutzen:** Wenn du ein neues Feature starten willst und die vollständige Qualitäts-Pipeline mit echter Agenten-Trennung durchlaufen möchtest.
 
 ---
 
@@ -492,6 +511,12 @@ bun run sync.ts setup mein-projekt ~/pfad/projekt  # Global + spezifische Agent-
 
 # INSTALL — Nur globale Installation (agents + commands → ~/.claude/)
 bun run sync.ts install
+
+# UNINSTALL — spartan-forge aus ~/.claude/ entfernen (nur eigene Dateien)
+bun run sync.ts uninstall
+
+# UNINSTALL — spartan-forge-Dateien aus einem Projekt entfernen (tasks/, CLAUDE.md bleiben)
+bun run sync.ts uninstall ~/pfad/zum/projekt
 
 # SYNC — FDE-Team in ein Projekt deployen
 bun run sync.ts sync generic ~/pfad/zu/projekt         # Generisches FDE-Team
