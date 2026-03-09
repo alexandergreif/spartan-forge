@@ -2,6 +2,12 @@
 
 All notable changes to spartan-forge are documented here.
 
+## [0.3.1] — 2026-03-09
+
+### Added
+- `sync.ts uninstall` — Remove spartan-forge global agents, commands, and skills from `~/.claude/` without touching user-added files
+- `sync.ts uninstall <path>` — Remove spartan-forge agent files and skills from a project, leaving `tasks/`, `CLAUDE.md`, and any user-added agents intact
+
 ## [0.3.0] — 2026-03-09
 
 ### Changed

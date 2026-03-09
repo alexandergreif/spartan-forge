@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-import { existsSync, mkdirSync, cpSync, copyFileSync, readFileSync, readdirSync, writeFileSync } from "fs";
+import { existsSync, mkdirSync, cpSync, copyFileSync, readFileSync, readdirSync, writeFileSync, rmSync } from "fs";
 import { resolve, dirname, join } from "path";
 
 const SCRIPT_DIR = dirname(Bun.main);
@@ -232,6 +232,117 @@ function lessonsAggregate() {
   }
 }
 
+// --- UNINSTALL: remove spartan-forge files from ~/.claude/ or a project ---
+function uninstall(args: string[]) {
+  if (args.length === 0) {
+    uninstallGlobal();
+  } else {
+    uninstallRepo(args[0]);
+  }
+}
+
+function uninstallGlobal() {
+  const home = Bun.env.HOME!;
+  const claudeDir = resolve(home, ".claude");
+  console.log("🗑️  Uninstalling spartan-forge from ~/.claude/\n");
+
+  // Remove global agents (only files spartan-forge installed)
+  const agentsDir = resolve(claudeDir, "agents");
+  let agentsRemoved = 0;
+  if (existsSync(agentsDir)) {
+    const toRemove = [
+      ...readdirSync(GLOBAL_AGENTS_DIR).filter(f => f.endsWith(".md")),
+      "leonidas.md",
+    ];
+    for (const file of toRemove) {
+      const target = resolve(agentsDir, file);
+      if (existsSync(target)) { rmSync(target); agentsRemoved++; }
+    }
+  }
+  console.log(`  ✅ Removed ${agentsRemoved} agents from ~/.claude/agents/`);
+
+  // Remove commands (only files spartan-forge installed)
+  const commandsDir = resolve(claudeDir, "commands");
+  let cmdsRemoved = 0;
+  if (existsSync(commandsDir)) {
+    for (const file of readdirSync(COMMANDS_DIR).filter(f => f.endsWith(".md"))) {
+      const target = resolve(commandsDir, file);
+      if (existsSync(target)) { rmSync(target); cmdsRemoved++; }
+    }
+  }
+  console.log(`  ✅ Removed ${cmdsRemoved} commands from ~/.claude/commands/`);
+
+  // Remove skills (only files spartan-forge installed)
+  const skillsDir = resolve(claudeDir, "skills");
+  let skillsRemoved = 0;
+  if (existsSync(skillsDir) && existsSync(SKILLS_DIR)) {
+    for (const file of readdirSync(SKILLS_DIR).filter(f => f.endsWith(".md"))) {
+      const target = resolve(skillsDir, file);
+      if (existsSync(target)) { rmSync(target); skillsRemoved++; }
+    }
+  }
+  console.log(`  ✅ Removed ${skillsRemoved} skills from ~/.claude/skills/`);
+
+  console.log("\n✅ Global uninstall complete.");
+  console.log("   ~/.claude/CLAUDE.md and any user-added agents were left intact.");
+}
+
+function uninstallRepo(targetPath: string) {
+  const target = resolvePath(targetPath);
+  console.log(`🗑️  Uninstalling spartan-forge from ${target}\n`);
+
+  // Remove agent files that spartan-forge installed (match generic agent filenames)
+  const agentsTarget = resolve(target, ".claude/agents");
+  if (existsSync(agentsTarget)) {
+    const genericDir = resolve(AGENTS_DIR, "generic");
+    const genericEntries = readdirSync(genericDir, { recursive: true, withFileTypes: true }) as any[];
+    let removed = 0;
+    for (const entry of genericEntries) {
+      if (typeof entry === "object" && entry.name?.endsWith(".md")) {
+        const rel = entry.parentPath
+          ? join(entry.parentPath, entry.name).replace(genericDir + "/", "")
+          : entry.name;
+        const agentPath = resolve(agentsTarget, rel);
+        if (existsSync(agentPath)) { rmSync(agentPath); removed++; }
+      }
+    }
+    // Remove empty subdirectories left behind
+    for (const sub of readdirSync(agentsTarget, { withFileTypes: true })) {
+      if (sub.isDirectory()) {
+        const subPath = resolve(agentsTarget, sub.name);
+        if (readdirSync(subPath).length === 0) rmSync(subPath);
+      }
+    }
+    console.log(`  ✅ Removed ${removed} agent files from .claude/agents/`);
+  } else {
+    console.log("  ⏭️  .claude/agents/ not found — skipping");
+  }
+
+  // Remove skills installed by spartan-forge
+  const skillsTarget = resolve(target, ".claude/skills");
+  if (existsSync(skillsTarget) && existsSync(SKILLS_DIR)) {
+    let skillsRemoved = 0;
+    for (const file of readdirSync(SKILLS_DIR).filter(f => f.endsWith(".md"))) {
+      const p = resolve(skillsTarget, file);
+      if (existsSync(p)) { rmSync(p); skillsRemoved++; }
+    }
+    console.log(`  ✅ Removed ${skillsRemoved} skill files from .claude/skills/`);
+  } else {
+    console.log("  ⏭️  .claude/skills/ not found — skipping");
+  }
+
+  // Remove repo-profile installed by spartan-forge
+  const profileTarget = resolve(target, ".claude/resources/repo-profile.md");
+  if (existsSync(profileTarget)) {
+    rmSync(profileTarget);
+    console.log("  ✅ Removed .claude/resources/repo-profile.md");
+  }
+
+  console.log("\n✅ Project uninstall complete.");
+  console.log("   Left intact (contain your data — remove manually if no longer needed):");
+  console.log("     tasks/todo.md, tasks/notes.md, tasks/lessons.md, CLAUDE.md");
+}
+
 // --- LOAD REPOS ---
 function loadRepos(): Array<{ repo: string; path: string }> {
   if (!existsSync(REPOS_CONF)) return [];
@@ -290,9 +401,15 @@ switch (command) {
     lessonsAggregate();
     break;
 
+  case "uninstall":
+    uninstall(args);
+    break;
+
   default:
     console.error("Usage:");
     console.error("  sync.ts install                            # Everything: global agents + skills + leonidas + auto-sync current repo");
+    console.error("  sync.ts uninstall                          # Remove spartan-forge agents/commands/skills from ~/.claude/");
+    console.error("  sync.ts uninstall <path>                   # Remove spartan-forge files from a project (leaves tasks/, CLAUDE.md)");
     console.error("  sync.ts sync <agent-group> <path>          # Sync agents + skills into a specific repo");
     console.error("  sync.ts sync-all                           # Sync all repos in .repos.conf");
     console.error("  sync.ts setup [path]                       # Install global + optionally sync generic into <path>");
