@@ -111,13 +111,71 @@ You are <Name>, <one-line role definition>.
 11. If planner: C-DAD mandate present (must produce contracts, not just specs)
 12. If tester: TDD Iron Law present (must enforce Red → Green → Refactor)
 
-## Agent Teams Integration
+## Runtime Orchestration Mode
 
-When spawning the 5 Spartan agents as a team:
-1. Use `TeamCreate` after the Socratic Gate clears
-2. Spawn: fde-planner, fde-developer, fde-tester, fde-reviewer, fde-documenter
-3. Coordinate via `TaskCreate`/`TaskUpdate` and `SendMessage`
-4. On shutdown: send `shutdown_request` to each agent so they write session knowledge to `tasks/notes.md` + `tasks/lessons.md` before exiting
+When `/fde-workflow` is invoked, Leonidas acts as the **runtime orchestrator**, spawning
+each FDE agent as a real subagent using the Agent tool — not simulating their roles inline.
+
+### Sequential Spawn Protocol
+
+```
+Leonidas (current session, orchestrator)
+  ├── Phase 0: Socratic Gate (inline — Leonidas asks clarifying questions)
+  ├── Phase 1: Write clarified requirements to tasks/notes.md
+  ├── Phase 2: Spawn @fde-planner — wait for completion
+  │   └── Read STATUS from tasks/notes.md: READY_FOR_DEVELOPER | BLOCKED
+  ├── Phase 3: [Optional specialist injection — see rules below]
+  ├── Phase 4: Spawn @fde-developer — wait for completion
+  │   └── Read STATUS from tasks/notes.md: READY_FOR_TESTER | BUILD_FAILED | BLOCKED
+  ├── Phase 5: [Optional: spawn @expert-troubleshooter if BUILD_FAILED]
+  ├── Phase 6: Spawn @fde-tester — wait for completion
+  │   └── Read STATUS from tasks/notes.md: TESTS_PASSING | TESTS_FAILING | INFRA_MISSING
+  ├── Phase 7: [Optional: spawn @test-automator if INFRA_MISSING]
+  ├── Phase 8: Spawn @fde-reviewer — wait for completion
+  │   └── Read Verdict from tasks/notes.md: APPROVE | REQUEST_CHANGES
+  │   └── If REQUEST_CHANGES: PAUSE and surface to user — NEVER auto-fix
+  └── Phase 9: Spawn @fde-documenter — final cleanup
+```
+
+### Handoff Block Validation
+
+After each agent returns, Leonidas reads `tasks/notes.md` and extracts the last
+`## Handoff:` block. It checks the STATUS line before spawning the next agent.
+If STATUS is BLOCKED or BUILD_FAILED, Leonidas reports the failure to the user
+and halts the pipeline — it does NOT retry automatically.
+
+### Context Passing to Subagents
+
+Each spawned agent receives a prompt containing:
+1. The original feature request (one paragraph)
+2. The last `## Handoff:` block extracted from `tasks/notes.md`
+3. The instruction: "Read tasks/todo.md, tasks/notes.md, and tasks/lessons.md at session start."
+
+Agents read the full files themselves — Leonidas only passes the handoff summary.
+
+### Deterministic Specialist Injection Rules
+
+| Trigger | Specialist | Injected After |
+|---------|-----------|----------------|
+| Contract contains auth/JWT/OAuth/RBAC | `security-auditor` | fde-planner |
+| Contract has DB operations/migrations | `database-admin` | fde-planner |
+| UI/frontend work (React/components/CSS) | `ui-ux-designer` | fde-planner |
+| Developer STATUS = BUILD_FAILED | `expert-troubleshooter` | fde-developer |
+| Tester STATUS = INFRA_MISSING | `test-automator` | fde-tester |
+| Reviewer Verdict = REQUEST_CHANGES | **PAUSE** → surface to user | — |
+
+### Status Reporting Between Phases
+
+After each agent completes, print to the conversation:
+```
+✓ [Phase N] fde-<role> complete — STATUS: <value>
+→ Next: fde-<next-role>
+```
+On failure or specialist injection:
+```
+⚠ [Phase N] fde-<role> returned STATUS: BUILD_FAILED
+→ Injecting expert-troubleshooter before continuing
+```
 
 ## After Every Agent Creation/Modification
 

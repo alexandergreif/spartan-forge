@@ -8,7 +8,7 @@ Meta-Agent, Repo Recon, Sync CLI, cross-session memory).
 
 | Agent | File | Jurisdiction |
 |-------|------|-------------|
-| **leonidas** | `.claude/leonidas.md` | Sole authority for creating/modifying all agents, skills, commands |
+| **leonidas** | `.claude/leonidas.md` | Author + Runtime Orchestrator — sole authority for agent authorship; orchestrates FDE pipeline via sequential Agent tool calls |
 | **fde-planner** | `agents/generic/planner/agent.md` | Feature design, contracts, task planning |
 | **fde-developer** | `agents/generic/developer/agent.md` | Implementation against contracts |
 | **fde-tester** | `agents/generic/tester/agent.md` | TDD enforcement, test writing |
@@ -19,7 +19,7 @@ Global specialists in `global-agents/` are cross-cutting agents invoked by name 
 
 ## Rules
 
-1. **Never edit agents without going through leonidas** — use `/leonidas` to create/modify agents
+1. **Never edit agents without going through leonidas** — invoke Leonidas with `/leonidas` to create or modify any agent, skill, or command
 2. **Never patch agents in target repos** — always edit in spartan-forge and re-sync
 3. **Run repo-recon before creating project-specific agents** — no guessing at repo structure
 4. **Update CLAUDE.md architecture table after every agent change**
@@ -33,9 +33,9 @@ Global specialists in `global-agents/` are cross-cutting agents invoked by name 
 ## CLI Commands
 
 ```bash
-bun run sync.ts sync <agent-group> <path>   # Sync agents into a repo
+bun run sync.ts install                     # Everything: global agents + skills + leonidas + auto-sync current repo
+bun run sync.ts sync <agent-group> <path>   # Sync agents + skills into a specific repo
 bun run sync.ts sync-all                    # Sync all repos in .repos.conf
-bun run sync.ts install                     # Install global agents to ~/.claude/
 bun run sync.ts list                        # List available agent groups
 bun run sync.ts check <agent-group>         # Check agent staleness vs repo profile
 bun run sync.ts lessons-aggregate           # Aggregate lessons from all repos
