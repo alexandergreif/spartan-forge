@@ -8,6 +8,8 @@ const TEMPLATES_DIR = resolve(SCRIPT_DIR, "templates");
 const AGENTS_DIR = resolve(SCRIPT_DIR, "agents");
 const GLOBAL_AGENTS_DIR = resolve(SCRIPT_DIR, "global-agents");
 const COMMANDS_DIR = resolve(SCRIPT_DIR, "commands");
+const SKILLS_DIR = resolve(SCRIPT_DIR, "skills");
+const LEONIDAS_MD = resolve(SCRIPT_DIR, ".claude", "leonidas.md");
 
 function resolvePath(p: string): string {
   return resolve(p.replace("~", Bun.env.HOME!));
@@ -30,6 +32,14 @@ function syncRepo(group: string, targetPath: string) {
   mkdirSync(agentsTarget, { recursive: true });
   cpSync(source, agentsTarget, { recursive: true, force: true });
   console.log("  ✅ Agents synced");
+
+  // Always overwrite skills
+  if (existsSync(SKILLS_DIR)) {
+    const skillsTarget = resolve(target, ".claude/skills");
+    mkdirSync(skillsTarget, { recursive: true });
+    cpSync(SKILLS_DIR, skillsTarget, { recursive: true, force: true });
+    console.log("  ✅ Skills synced");
+  }
 
   // Always overwrite profile (if exists)
   const resourcesDir = resolve(target, ".claude/resources");
@@ -106,6 +116,31 @@ function install() {
     copyFileSync(resolve(COMMANDS_DIR, cmd), resolve(commandsDir, cmd));
   }
   console.log(`✅ ${commands.length} commands installed to ~/.claude/commands/`);
+
+  // Skills global
+  const skillsDir = resolve(claudeDir, "skills");
+  mkdirSync(skillsDir, { recursive: true });
+  if (existsSync(SKILLS_DIR)) {
+    const skillFiles = readdirSync(SKILLS_DIR).filter(f => f.endsWith(".md"));
+    for (const s of skillFiles) {
+      copyFileSync(resolve(SKILLS_DIR, s), resolve(skillsDir, s));
+    }
+    console.log(`✅ ${skillFiles.length} skills installed to ~/.claude/skills/`);
+  }
+
+  // Leonidas as global agent
+  if (existsSync(LEONIDAS_MD)) {
+    copyFileSync(LEONIDAS_MD, resolve(agentsDir, "leonidas.md"));
+    console.log("✅ leonidas installed to ~/.claude/agents/leonidas.md");
+  }
+
+  // Auto-sync into current repo if it's a git repo (and not spartan-forge itself)
+  const cwd = process.cwd();
+  const isGitRepo = existsSync(resolve(cwd, ".git"));
+  if (isGitRepo && cwd !== SCRIPT_DIR) {
+    console.log(`\n🔍 Git repo detected at ${cwd} — auto-syncing...`);
+    syncRepo("generic", cwd);
+  }
 }
 
 // --- LIST: show available agent groups ---
@@ -257,11 +292,11 @@ switch (command) {
 
   default:
     console.error("Usage:");
+    console.error("  sync.ts install                            # Everything: global agents + skills + leonidas + auto-sync current repo");
+    console.error("  sync.ts sync <agent-group> <path>          # Sync agents + skills into a specific repo");
+    console.error("  sync.ts sync-all                           # Sync all repos in .repos.conf");
     console.error("  sync.ts setup [path]                       # Install global + optionally sync generic into <path>");
     console.error("  sync.ts setup <agent-group> <path>         # Install global + sync specific group into <path>");
-    console.error("  sync.ts install                            # Install global agents + commands to ~/.claude/");
-    console.error("  sync.ts sync <agent-group> <path>          # Sync agents into a repo");
-    console.error("  sync.ts sync-all                           # Sync all repos in .repos.conf");
     console.error("  sync.ts list                               # List available agent groups");
     console.error("  sync.ts check <agent-group>                # Check agent group vs repo profile");
     console.error("  sync.ts lessons-aggregate                  # Aggregate lessons from all repos");
