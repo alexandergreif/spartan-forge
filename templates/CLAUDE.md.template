@@ -7,6 +7,8 @@
 Role agents in `.claude/agents/` are synced from spartan-forge. **Never edit them here.**
 Edit in the foundry and re-sync.
 
+> Re-sync agents from spartan-forge: `bun run sync.ts sync generic <path>`
+
 | Role | Responsibility | FDE Principle |
 |------|---------------|---------------|
 | **planner** | Breaks down tasks, writes contracts (C-DAD), owns `tasks/todo.md` | Contract-Driven AI Development |

@@ -1,21 +1,18 @@
 Command: Git Commit & Memory (/commit)
 
-Beschreibung: Nutze diesen Befehl, um abgeschlossene, validierte Arbeit sicher in die Git-Historie (unser Langzeitgedächtnis) zu übertragen.
+Use this command to safely record completed, validated work into the git history.
 
-Ablauf:
+## Steps
 
-Diff analysieren: Führe git status und git diff aus, um alle Änderungen präzise zu erfassen.
+1. **Analyze changes:** Run `git status` and `git diff` to capture all modifications precisely.
 
-Tests prüfen: Stelle sicher, dass der Code läuft und keine offensichtlichen Fehler (z.B. Linter-Warnungen) vorliegen.
+2. **Verify quality:** Confirm the code runs and no obvious errors (e.g. linter warnings) are present.
 
-Commit Message formatieren: Schreibe die Commit-Message strikt nach den Conventional Commits Regeln:
+3. **Format commit message** following Conventional Commits strictly:
+   - Format: `type(scope): short description in English`
+   - Allowed types: `feat`, `fix`, `chore`, `refactor`, `docs`, `test`
+   - Include a body explaining **why** the change was made, not just what.
 
-Format: type(scope): kurze Beschreibung in Englisch
+4. **Execute:** Run `git add .` followed by `git commit -m "..."` autonomously.
 
-Erlaubte Types: feat, fix, chore, refactor, docs, test.
-
-Füge im Body der Message eine kurze Begründung hinzu, warum die Änderung gemacht wurde und nicht nur was gemacht wurde.
-
-Ausführung: Führe git add . gefolgt von git commit -m "..." autonom aus.
-
-Erfolg melden: Melde dem User den erfolgreichen Commit und den generierten Hash in einer kurzen Bestätigung.
+5. **Report:** Confirm the successful commit and the generated hash to the user.

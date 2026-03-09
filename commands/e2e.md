@@ -1,21 +1,17 @@
 Command: Visual E2E Testing (/e2e)
 
-Beschreibung: Nutze diesen Befehl, um das Frontend visuell durch einen Headless-Browser zu testen.
+Use this command to visually test the frontend through a headless browser.
 
-Ablauf:
+## Steps
 
-Server prüfen: Stelle sicher, dass der lokale Dev-Server läuft (z.B. localhost:3000). Wenn nicht, starte ihn im Hintergrund.
+1. **Verify server:** Ensure the local dev server is running (e.g. `localhost:3000`). If not, start it in the background.
 
-Agent Browser initialisieren: Nutze das Vercel Agent Browser CLI (agent-browser).
+2. **Initialize Agent Browser:** Use the Vercel Agent Browser CLI (`agent-browser`).
 
-User Journeys abarbeiten:
+3. **Work through user journeys:**
+   - Open the URL of the new feature.
+   - Take a screenshot: `agent-browser snapshot -i`
+   - Analyze the image: Does the UI look correct? Are buttons reachable?
+   - Click through the flow (e.g. login, fill form, submit).
 
-Öffne die URL der neuen Funktion.
-
-Mache einen Screenshot (nutze agent-browser snapshot -i).
-
-Analysiere das Bild: Sieht das UI korrekt aus? Sind die Buttons erreichbar?
-
-Klicke dich durch den Flow (z.B. Login, Formular ausfüllen).
-
-Fehlerbehebung: Wenn Elemente überlappen oder Logik-Fehler auftreten, behebe den Code und teste die Seite erneut, bis der Flow fehlerfrei durchläuft.
+4. **Fix and retest:** If elements overlap or logic errors occur, fix the code and retest until the flow runs cleanly end-to-end.

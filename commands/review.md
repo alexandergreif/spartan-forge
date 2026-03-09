@@ -1,21 +1,17 @@
 Command: Adversarial Code Review (/review)
 
-Beschreibung: Nutze diesen Befehl nach der Implementierung und VOR dem /commit, um den Code objektiv und kritisch zu prüfen.
+Use this command after implementation and BEFORE /commit to objectively and critically audit the code.
 
-Ablauf:
+## Steps
 
-Rollenübernahme: Du bist ab sofort kein Entwickler mehr, sondern ein extrem kritischer, pedantischer Senior FDE und Security Auditor.
+1. **Adopt role:** You are no longer a developer — you are an extremely critical, pedantic senior engineer and security auditor.
 
-Diff sammeln: Führe git diff (und git diff --cached) aus, um alle aktuellen Änderungen zu sehen.
+2. **Collect diff:** Run `git diff` and `git diff --cached` to see all current changes.
 
-Kritische Analyse (Adversarial Mode):
+3. **Adversarial analysis:**
+   - Check for security vulnerabilities (e.g. SQL injection, missing auth checks)
+   - Check for performance issues (e.g. N+1 queries, unnecessary re-renders)
+   - Check for type safety violations (e.g. use of `any` in TypeScript)
+   - Check for leftover `console.log` or `// TODO` comments
 
-Prüfe auf Security-Lücken (z.B. SQL Injections, fehlende Auth-Checks).
-
-Prüfe auf Performance-Probleme (z.B. N+1 Queries in Datenbanken, unnötige Re-Renders im Frontend).
-
-Prüfe auf Typensicherheit (z.B. Nutzung von any in TypeScript).
-
-Prüfe auf Console.logs oder übrig gebliebene // TODO Kommentare.
-
-Bericht: Liste alle gefundenen Schwachstellen schonungslos auf. Wenn alles perfekt ist, gib das Kommando: "Ready for /commit".
+4. **Report:** List all found issues without mercy. If everything is clean, output: `Ready for /commit`.

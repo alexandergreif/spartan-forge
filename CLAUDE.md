@@ -34,6 +34,8 @@ Global specialists in `global-agents/` are cross-cutting agents invoked by name 
 
 ```bash
 bun run sync.ts install                     # Everything: global agents + skills + leonidas + auto-sync current repo
+bun run sync.ts setup [path]                # install + optionally sync generic into <path>
+bun run sync.ts setup <group> <path>        # install + sync specific group into <path>
 bun run sync.ts uninstall                   # Remove spartan-forge agents/commands/skills from ~/.claude/
 bun run sync.ts uninstall <path>            # Remove spartan-forge files from a project (leaves tasks/, CLAUDE.md)
 bun run sync.ts sync <agent-group> <path>   # Sync agents + skills into a specific repo

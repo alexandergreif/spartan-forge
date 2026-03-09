@@ -2,6 +2,22 @@
 
 All notable changes to spartan-forge are documented here.
 
+## [0.3.2] — 2026-03-09
+
+### Fixed
+- `agents/generic/reviewer/agent.md` — Removed `NEEDS_DISCUSSION` verdict from Handoff Protocol template and output format; only `APPROVE` / `REQUEST_CHANGES` remain, eliminating an unhandled verdict that silently broke `fde-workflow` orchestration
+
+### Changed
+- `commands/commit.md` — Rewritten in English (functionally equivalent)
+- `commands/review.md` — Rewritten in English (functionally equivalent)
+- `commands/e2e.md` — Rewritten in English (functionally equivalent)
+
+### Added
+- `CLAUDE.md` — Added `setup [path]` and `setup <group> <path>` to CLI Commands section
+- `templates/CLAUDE.md.template` — Added re-sync hint under Agents section
+
+---
+
 ## [0.3.1] — 2026-03-09
 
 ### Added

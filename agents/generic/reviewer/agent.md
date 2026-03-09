@@ -74,7 +74,7 @@ structured review methodology with FDE's adversarial checklist.
 Before handing off to Documenter, write to `tasks/notes.md`:
 ```markdown
 ## Handoff: Reviewer → Documenter (YYYY-MM-DD)
-- Verdict: APPROVE / REQUEST_CHANGES / NEEDS_DISCUSSION
+- Verdict: APPROVE / REQUEST_CHANGES
 - Blocking issues resolved: yes/no
 - Docs to update: <list specific files>
 ```
@@ -87,4 +87,4 @@ Three sections:
 3. **Suggestions** — Nice to have (elegance, readability)
 
 Each item: file + line reference, description, severity, recommended fix.
-Final verdict: APPROVE, REQUEST_CHANGES, or NEEDS_DISCUSSION.
+Final verdict: APPROVE or REQUEST_CHANGES.
