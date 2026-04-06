@@ -1,0 +1,13 @@
+# User data — never commit personal notes, wiki, or session files
+foundry-lessons.md
+/raw/
+/wiki/
+/tasks/
+/tests/
+
+# Config with local file paths
+.repos.conf
+
+# Dependencies & OS
+node_modules/
+.DS_Store
