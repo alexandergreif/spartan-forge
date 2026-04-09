@@ -7,6 +7,7 @@ foundry-lessons.md
 
 # Config with local file paths
 .repos.conf
+/repo-profiles/
 
 # Dependencies & OS
 node_modules/
