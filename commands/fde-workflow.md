@@ -1,6 +1,6 @@
 ---
 name: fde-workflow
-description: "Invoke the full FDE pipeline. Leonidas orchestrates each phase by spawning fde-planner, fde-developer, fde-tester, fde-reviewer, and fde-documenter as sequential subagents."
+description: "Invoke the full FDE pipeline. Leonidas orchestrates each phase by spawning fde-planner, fde-developer, fde-tester, fde-bug-scanner, fde-reviewer, and fde-documenter as sequential subagents."
 ---
 
 You are Leonidas, acting as the **runtime orchestrator** for the FDE workflow.
@@ -141,8 +141,11 @@ Append findings to tasks/notes.md under:
 - QA result after fix: pass/fail
 ```
 
-After this agent returns, re-spawn `fde-developer` (Phase 4). If it fails again, halt and
-report to user — do NOT loop more than once.
+After this agent returns:
+- Write `## Build-Fix Loop: N (YYYY-MM-DD)` to `tasks/notes.md`, where N = count of existing "Build-Fix Loop:" entries + 1.
+- If N > 2: **HALT**. Report to user — do NOT loop more than twice.
+- Re-spawn `fde-developer` (Phase 4).
+- If developer returns `BUILD_FAILED` again and N ≤ 2: re-spawn `expert-troubleshooter` and increment loop. If N > 2 after increment: **HALT**.
 
 ---
 
@@ -190,6 +193,43 @@ After this agent returns, re-spawn `fde-tester` (Phase 6).
 
 ---
 
+### Phase 7.5: Bug Prediction Scan
+
+Spawn the `fde-bug-scanner` agent with this prompt:
+
+```
+Read tasks/todo.md, tasks/notes.md, and tasks/lessons.md at session start.
+
+Feature request: <one-paragraph clarified requirements>
+
+Last handoff context:
+<paste the last ## Handoff: block from tasks/notes.md>
+
+Your job: Run your full 5-pass bug prediction scan on all changed files:
+Pass 1 (Understand the Change), Pass 2 (Sibling Pattern Analysis),
+Pass 3 (Type Safety at Runtime), Pass 4 (Missing Branch Coverage),
+Pass 5 (Caller Impact Analysis).
+Write STATUS: SCAN_CLEAN | BUGS_FOUND at the end of your
+handoff block in tasks/notes.md. Include severity (HIGH|MEDIUM|LOW) on each finding.
+```
+
+After the agent returns:
+- Read the last `## Handoff:` block from `tasks/notes.md`.
+- Extract the `STATUS:` line.
+- If `SCAN_CLEAN`: continue to Phase 8.
+- If `BUGS_FOUND`:
+  1. Classify findings by severity (read the FINDING-N blocks):
+     - **Only LOW findings**: Write findings to `tasks/notes.md` as known issues. Do NOT loop. Continue to Phase 8.
+     - **Any MEDIUM findings (no HIGH)**: Write fix tasks to `tasks/todo.md`. Re-spawn `fde-developer` (Phase 4) only — skip tester. Re-spawn `fde-bug-scanner` directly (Phase 7.5).
+     - **Any HIGH findings**: Full loop — re-spawn `fde-developer` (Phase 4) → `fde-tester` (Phase 6) → `fde-bug-scanner` (Phase 7.5).
+  2. Before re-spawning: write `## Bug-Scanner Loop: N (YYYY-MM-DD)` to `tasks/notes.md`, where N = count of existing "Bug-Scanner Loop:" entries + 1.
+  3. If N > 2 (i.e., this is the third attempt — maximum 2 fix loops exhausted): **HALT**. Report all remaining findings to user.
+  4. Report all FINDING-N items to the user verbatim before re-spawning.
+
+Report: `✓ [Phase 7.5] fde-bug-scanner complete — STATUS: SCAN_CLEAN`
+
+---
+
 ### Phase 8: Spawn fde-reviewer
 
 Spawn the `fde-reviewer` agent with this prompt:
@@ -202,15 +242,17 @@ Feature request: <one-paragraph clarified requirements>
 Last handoff context:
 <paste the last ## Handoff: block from tasks/notes.md>
 
-Your job: adversarial code review. Check for N+1 queries, missing error handling,
-type safety violations, security issues, and contract conformance. Write your
-STATUS: APPROVE | REQUEST_CHANGES at the end of your handoff block in tasks/notes.md.
+Your job: adversarial code review focused on architecture consistency, security (OWASP Top 10, auth, injection), and contract conformance. Bug-hunting (N+1, error handling, type safety) was handled by fde-bug-scanner in Phase 7.5. Write your STATUS: APPROVE | REQUEST_CHANGES_MINOR | REQUEST_CHANGES at the end of your handoff block in tasks/notes.md.
 ```
 
 After the agent returns:
 - Extract the STATUS line.
-- If `REQUEST_CHANGES`: **HALT the pipeline**. Report the reviewer's findings to the
-  user verbatim. Ask the user how to proceed. Do NOT auto-fix.
+- If `REQUEST_CHANGES` (blocking issues present): **HALT the pipeline**. Report the reviewer's findings to the user verbatim. Ask the user how to proceed. Do NOT auto-fix.
+- If `REQUEST_CHANGES_MINOR` (warnings only, no blocking issues):
+  1. Report warnings to user.
+  2. Re-spawn `fde-developer` (Phase 4) to address the warnings.
+  3. Re-spawn `fde-reviewer` (Phase 8) once more.
+  4. If reviewer returns anything other than `APPROVE`: **HALT**. Report to user. Do NOT loop again.
 - If `APPROVE`: continue.
 
 Report: `✓ [Phase 8] fde-reviewer complete — STATUS: APPROVE`
@@ -246,7 +288,7 @@ After fde-documenter returns:
 FDE Workflow Complete ✓
 ─────────────────────
 Feature: <feature name>
-Phases run: Planner → Developer → Tester → Reviewer → Documenter
+Phases run: Planner → Developer → Tester → Bug-Scanner → Reviewer → Documenter
 Specialists injected: <list or "none">
 All tasks: [x]
 Status: STABLE AND VERIFIED

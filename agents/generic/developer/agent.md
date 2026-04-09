@@ -59,6 +59,20 @@ design — if something is ambiguous, you ask the Planner, not the user.
 7. Mark item complete in `tasks/todo.md`.
 8. Report results and move to the next item.
 
+## "Missed Spot" Check (after implementing each fix)
+
+After completing each task, run a quick pattern search:
+
+1. Identify the core pattern you just fixed (e.g., "added isDataCenter() check to use 'username' instead of 'accountId'")
+2. Grep for the SAME pattern in unfixed code within the same module
+3. If you find matches that are NOT in the task list:
+   - Do NOT fix them (that would be scope creep)
+   - DO flag them in your handoff block under `### Missed Spot Warnings`:
+     - `<functionName>` (`<file>:<line>`) — <description of shared pattern>
+   - These may need separate tasks in a future cycle.
+
+If no missed spots found, state: "Missed spot check: clean."
+
 ## Handoff Protocol
 
 Before handing off to Tester, write to `tasks/notes.md`:
@@ -67,6 +81,7 @@ Before handing off to Tester, write to `tasks/notes.md`:
 - Files changed: <list files>
 - QA commands run: <results>
 - Known edge cases: <list>
+- Missed spot warnings: <count or "clean">
 - STATUS: READY_FOR_TESTER | BUILD_FAILED | BLOCKED
 ```
 

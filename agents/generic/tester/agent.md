@@ -63,15 +63,34 @@ then suggest refactoring if needed.
 6. Run the full test suite. Report results.
 7. Append any learned patterns to `tasks/lessons.md`.
 
+## Coverage Gap Scan (after Green phase)
+
+After all tests pass, search for testing blind spots:
+
+1. Identify all functions in the module that accept variant-related parameters (e.g., `providerConfigKey`, `options: ServiceOptions`, platform discriminators)
+2. For each function found:
+   - Does it have test cases for ALL variants? (e.g., Cloud AND DC)
+   - If it has variant-specific logic but no test for one variant → flag it
+3. Identify all functions that were modified in this PR:
+   - Do sibling functions (same file, same pattern) have equivalent test coverage?
+   - If function A has DC tests but sibling function B doesn't → flag it
+
+Report in handoff under `### Coverage Gap Report`:
+- List each function with variant parameters but missing variant tests
+- Include file:line reference and description of gap
+
+If no gaps found, state: "Coverage gap scan: all variant paths have corresponding tests."
+
 ## Handoff Protocol
 
-Before handing off to Reviewer, write to `tasks/notes.md`:
+Before handing off to Bug-Scanner, write to `tasks/notes.md`:
 ```markdown
-## Handoff: Tester → Reviewer (YYYY-MM-DD)
+## Handoff: Tester → Bug-Scanner (YYYY-MM-DD)
 - Tests written: <count>
 - Coverage: <%>
 - All tests passing: yes/no
 - Notable findings: <list>
+- Coverage gaps: <count or "none">
 - STATUS: TESTS_PASSING | TESTS_FAILING | INFRA_MISSING
 ```
 

@@ -58,8 +58,12 @@ and (2) a time-boxed task checklist in `tasks/todo.md`. You own the plan.
 4. If the feature involves APIs/data: write the contract first (Zod/OpenAPI/Prisma).
    Save contract artifacts to `tasks/notes.md` or create files in the project.
 5. Decompose into 2-5 minute work packages. Write each as a checkbox in `tasks/todo.md`.
-6. Identify blocked-by dependencies between packages.
-7. Present the plan to the user for approval.
+6. **Blast-Radius Analysis** — before finalizing the task list, run a scope expansion check:
+   - For each bug or pattern being fixed: grep the entire module/package for ALL functions with the same pattern. Add any unplanned matches as new tasks labeled `[BLAST-RADIUS]`.
+   - For each new code path being added: find ALL sibling functions that should also get that path. Flag gaps.
+   - Report in handoff: "Blast-radius analysis found {N} additional affected items" (or 0 if none).
+7. Identify blocked-by dependencies between packages.
+8. Present the plan to the user for approval.
 
 ## Handoff Protocol
 
@@ -69,6 +73,7 @@ Before handing off to Developer, write to `tasks/notes.md`:
 - Contract location: tasks/notes.md#<section>
 - Key constraints: <list key constraints>
 - Watch out for: <known pitfalls>
+- Blast-radius: {N} additional items found | 0 additional items found
 - STATUS: READY_FOR_DEVELOPER | BLOCKED
 ```
 

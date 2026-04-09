@@ -1,7 +1,7 @@
 # spartan-forge — Foundry Operating Instructions
 
 spartan-forge is a personal agent foundry combining FDE methodology (Socratic Gate,
-C-DAD, TDD Iron Law, PIV-Loop) with structured agent infrastructure (5-role teams,
+C-DAD, TDD Iron Law, PIV-Loop) with structured agent infrastructure (6-role teams,
 Meta-Agent, Repo Recon, Sync CLI, cross-session memory).
 
 ## Agent Architecture
@@ -12,6 +12,7 @@ Meta-Agent, Repo Recon, Sync CLI, cross-session memory).
 | **fde-planner** | `agents/generic/planner/agent.md` | Feature design, contracts, task planning |
 | **fde-developer** | `agents/generic/developer/agent.md` | Implementation against contracts |
 | **fde-tester** | `agents/generic/tester/agent.md` | TDD enforcement, test writing |
+| **fde-bug-scanner** | `agents/generic/bug-scanner/agent.md` | 5-pass bug prediction scan — sibling patterns, type safety, branch coverage, caller impact |
 | **fde-reviewer** | `agents/generic/reviewer/agent.md` | Adversarial code review |
 | **fde-documenter** | `agents/generic/documenter/agent.md` | Post-approval documentation |
 | **archivist** | `global-agents/archivist.md` | Wiki knowledge management — compile, sync, query, lint, intake |
@@ -69,7 +70,7 @@ spartan-forge/
 │   └── leonidas.md          # Meta-agent
 ├── agents/
 │   ├── _shared/             # Shared obligations
-│   ├── generic/             # Generic FDE team (5 roles)
+│   ├── generic/             # Generic FDE team (6 roles)
 │   └── projects/            # Repo-specific agent groups (authored by Leonidas)
 ├── global-agents/           # Cross-cutting specialists
 ├── commands/                # 8 Slash commands (fde-workflow, commit, review, e2e, repo-recon, mcp-builder, leonidas, wiki)

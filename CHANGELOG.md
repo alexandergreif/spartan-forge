@@ -2,6 +2,35 @@
 
 All notable changes to spartan-forge are documented here.
 
+## [0.6.1] — 2026-04-09
+
+### Changed
+- `commands/fde-workflow.md` — Phase 5 (Build Failure): max retries increased from 1 to 2, loop counter persisted to `tasks/notes.md`
+- `commands/fde-workflow.md` — Phase 7.5 (Bug-Scanner): severity-based routing added — LOW-only findings skip the loop and continue to reviewer; MEDIUM-only findings re-run developer only (skip tester); HIGH findings trigger full loop (developer → tester → bug-scanner); spawn prompt now explicitly lists all 5 passes
+- `commands/fde-workflow.md` — Phase 8 (Reviewer): `REQUEST_CHANGES_MINOR` status added — warnings-only finding triggers one developer auto-loop then re-review; blocking findings still halt immediately
+- `agents/generic/reviewer/agent.md` — Gate HALT block headers now include `(— GATE HALT)` qualifier for accurate audit trail; `REQUEST_CHANGES_MINOR` status added with semantics definition; STATUS separator fixed in output format description
+- `agents/generic/bug-scanner/agent.md` — removed self-referential `Bug-scanner status verified:` field from handoff template (redundant with STATUS line)
+- `agents/generic/planner/agent.md` — blast-radius description: "functions" → "items" to match handoff template wording
+- `commands/review.md` — pipeline check now handles missing `tasks/notes.md` gracefully (runs all checks when file absent)
+
+## [0.6.0] — 2026-04-09
+
+### Added
+- **FDE Defense-in-Depth Pipeline** — 4-layer bug detection system inserted into the FDE pipeline to catch sibling-pattern bugs, missing branch coverage, and caller-impact regressions before the reviewer phase
+- `agents/generic/bug-scanner/agent.md` — new `fde-bug-scanner` agent (`claude-sonnet-4-6`); runs a 5-pass bug prediction scan (Pass 1: Change Understanding, Pass 2: Sibling Pattern Analysis, Pass 3: Type Safety at Runtime, Pass 4: Missing Branch Coverage, Pass 5: Caller Impact Analysis); outputs structured FINDING-{N} blocks with Severity/File/Category/Description/Evidence/Suggested Fix; emits `STATUS: SCAN_CLEAN | BUGS_FOUND`
+- `agents/generic/planner/agent.md` — Blast-Radius Analysis step added to Behavior block: planner now greps the entire module for all functions matching the same pattern and adds unplanned matches as `[BLAST-RADIUS]` tasks; handoff template gains `blast-radius:` field
+- `agents/generic/developer/agent.md` — "Missed Spot" Check section added after Behavior block: after each task the developer greps for the same pattern in unseen code and flags matches in the handoff as `### Missed Spot Warnings` (flag-only, never auto-fix); handoff template gains `missed-spot warnings:` field
+- `agents/generic/tester/agent.md` — Coverage Gap Scan section added after Behavior block: tester checks all variant-related parameters across the module for test coverage gaps and sibling functions for equivalent coverage; handoff template gains `coverage-gaps:` field
+- Phase 7.5 added to `commands/fde-workflow.md`: fde-bug-scanner spawned between Phase 7 (tester) and Phase 8 (reviewer); max-2-loop BUGS_FOUND fix cycle (re-runs Phase 4 → Phase 6 → Phase 7.5); halts with explicit error on third consecutive failure
+- `commands/review.md` — pipeline-awareness added: step 3 checks `tasks/notes.md` for `SCAN_CLEAN` STATUS; N+1 and type-safety checklist items are de-prioritized and tagged `[bug-scanner]` when scanner evidence is present
+
+### Changed
+- `agents/generic/reviewer/agent.md` — Scanner Gate Check added as hard-stop guard (3 branches: BUGS_FOUND → halt, SCAN_CLEAN → proceed, absent → warn and proceed); 3 capabilities removed from Capabilities list (N+1 detection, TypeScript strictness violations, missing error handling); 2 checklist items removed from adversarial checklist (N+1 patterns, missing error handling); Adversarial Review FDE principle updated: "Bug-hunting is handled upstream by fde-bug-scanner — do not duplicate that work"; description frontmatter updated to reference fde-bug-scanner prerequisite; Behavior step 3 updated from "from Tester" → "from Bug-Scanner"; STATUS separator fixed (`/` → `|`) for machine-parse compatibility; handoff template gains `bug-scanner status verified:` field
+- `commands/fde-workflow.md` — Phase 8 spawn prompt updated to remove N+1/error-handling/type-safety from reviewer job description, replacing with: "adversarial review for architecture consistency, security (OWASP), and contract conformance"; Phase 10 pipeline summary updated: `Planner → Developer → Tester → Bug-Scanner → Reviewer → Documenter`; description frontmatter updated to list fde-bug-scanner
+- `CLAUDE.md` — `fde-bug-scanner` row inserted in Agent Architecture table (between fde-tester and fde-reviewer); "5-role teams" updated to "6-role teams" in two places
+- `WORKFLOW.md` — pipeline string updated to include Bug-Scanner; manual agent table expanded to 6 steps with fde-bug-scanner entry; fde-reviewer description updated to reflect scanner-gate prerequisite; fde-bug-scanner bullet added to Agent Decision Guide; global agent count corrected to 12
+- `agents/generic/tester/agent.md` — handoff header updated from "Tester → Reviewer" to "Tester → Bug-Scanner"
+
 ## [0.5.0] — 2026-04-06
 
 ### Added

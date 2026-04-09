@@ -8,7 +8,7 @@ bun run sync.ts install
 ```
 
 This single command:
-- Installs all 11 global specialist agents → `~/.claude/agents/`
+- Installs all 12 global specialist agents → `~/.claude/agents/`
 - Installs Leonidas meta-agent → `~/.claude/agents/leonidas.md`
 - Installs skills → `~/.claude/skills/`
 - Installs commands → `~/.claude/commands/`
@@ -36,7 +36,7 @@ bun run sync.ts sync-all
 /fde-workflow
 ```
 
-The FDE orchestrator runs the full pipeline: Socratic Gate → Planner → Developer → Tester → Reviewer → Documenter.
+The FDE orchestrator runs the full pipeline: Socratic Gate → Planner → Developer → Tester → Bug-Scanner → Reviewer → Documenter.
 
 ### Option B: Manual Agent-by-Agent
 
@@ -45,8 +45,9 @@ The FDE orchestrator runs the full pipeline: Socratic Gate → Planner → Devel
 | 1 | Feature starts, requirements unclear | `fde-planner` |
 | 2 | Contracts exist in `tasks/todo.md` | `fde-developer` |
 | 3 | Developer done, no tests yet | `fde-tester` |
-| 4 | Tests pass, pre-merge gate | `fde-reviewer` |
-| 5 | Reviewer approved | `fde-documenter` |
+| 4 | Tests pass, pre-merge bug scan | `fde-bug-scanner` |
+| 5 | Bug scan clean, pre-merge gate | `fde-reviewer` |
+| 6 | Reviewer approved | `fde-documenter` |
 
 ---
 
@@ -57,7 +58,8 @@ The FDE orchestrator runs the full pipeline: Socratic Gate → Planner → Devel
 - **fde-planner** — Start here for any new feature. Clarifies requirements (Socratic Gate), writes C-DAD contracts (Zod/OpenAPI/Prisma), creates time-boxed task checklist in `tasks/todo.md`.
 - **fde-developer** — Use when contracts/specs exist. Implements strictly against the contract. Does NOT design.
 - **fde-tester** — Use immediately after developer finishes. Enforces Red → Green → Refactor. Blocks if tests don't pass.
-- **fde-reviewer** — Last gate before commit. Adversarial — actively looks for OWASP issues, contract violations, N+1 queries, missing error handling.
+- **fde-bug-scanner** — Use after tester passes. 5-pass bug prediction scan — sibling pattern analysis, type safety, branch coverage, caller impact. Blocks if bugs found.
+- **fde-reviewer** — Last gate before commit. Adversarial — checks OWASP issues, contract violations, and architecture consistency. Bug-hunting (N+1, error handling, type safety) is handled by fde-bug-scanner.
 - **fde-documenter** — After reviewer approves. Updates README, CHANGELOG, API docs. Documents observed reality only.
 
 ### Global Specialists (invoke any time, cross-cutting)
