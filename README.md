@@ -1,6 +1,6 @@
 # spartan-forge
 
-Persönliche Agent-Foundry, die die **FDE-Methodik** (Socratic Gate, C-DAD, TDD Iron Law, PIV-Loop) mit einer strukturierten Agent-Infrastruktur (5-Rollen-Teams, Meta-Agent, Repo Recon, Sync-CLI) kombiniert.
+Persönliche Agent-Foundry, die die **FDE-Methodik** (Socratic Gate, C-DAD, TDD Iron Law, PIV-Loop) mit einer strukturierten Agent-Infrastruktur (6-Rollen-Teams, Meta-Agent, Repo Recon, Sync-CLI) kombiniert.
 
 Kurz gesagt: spartan-forge ist eine Sammlung von KI-Agenten und Slash-Commands, die du in beliebige Projekte deployen kannst — damit Claude Code in jedem Repo nach denselben Qualitätsstandards arbeitet.
 
@@ -12,7 +12,7 @@ Kurz gesagt: spartan-forge ist eine Sammlung von KI-Agenten und Slash-Commands, 
 2. [Installation](#2-installation)
 3. [Was passiert bei der Installation?](#3-was-passiert-bei-der-installation)
 4. [Die FDE-Methodik](#4-die-fde-methodik)
-5. [Das Spartan Team — die 5 FDE-Agenten](#5-das-spartan-team--die-5-fde-agenten)
+5. [Das Spartan Team — die 6 FDE-Agenten](#5-das-spartan-team--die-6-fde-agenten)
 6. [Leonidas — der Meta-Agent](#6-leonidas--der-meta-agent)
 7. [Global Specialists](#7-global-specialists)
 8. [Slash Commands](#8-slash-commands)
@@ -73,7 +73,7 @@ Das war's. Claude Code kennt jetzt alle Agenten und Commands.
 ```
 ~/.claude/
 ├── agents/          ← 11 Global Specialist Agents
-└── commands/        ← 7 Slash Commands (fde-workflow, commit, review, e2e, repo-recon, mcp-builder, leonidas)
+└── commands/        ← 8 Slash Commands (fde-workflow, commit, review, e2e, repo-recon, mcp-builder, leonidas, wiki)
 ```
 
 Diese stehen dir danach **in jedem Projekt** zur Verfügung.
@@ -83,7 +83,7 @@ Diese stehen dir danach **in jedem Projekt** zur Verfügung.
 ```
 dein-projekt/
 ├── .claude/
-│   ├── agents/          ← Die 5 FDE-Agenten (planner, developer, tester, reviewer, documenter)
+│   ├── agents/          ← Die 6 FDE-Agenten (planner, developer, tester, bug-scanner, reviewer, documenter)
 │   └── resources/       ← Repo-Profil (wenn vorhanden)
 ├── tasks/
 │   ├── todo.md          ← Aufgaben-Checkliste (aus Template)
@@ -131,7 +131,7 @@ Kein Agent deklariert eine Aufgabe als fertig, ohne das Ergebnis verifiziert zu 
 
 ---
 
-## 5. Das Spartan Team — die 5 FDE-Agenten
+## 5. Das Spartan Team — die 6 FDE-Agenten
 
 Diese Agenten werden ins Zielprojekt deployt und arbeiten als Team zusammen. Jeder hat eine klar abgegrenzte Rolle.
 
@@ -186,23 +186,39 @@ Diese Agenten werden ins Zielprojekt deployt und arbeiten als Team zusammen. Jed
 
 ---
 
+### fde-bug-scanner
+
+**Trigger:** Automatisch nach dem Tester — Defense-in-Depth Bug Detection vor dem Reviewer.
+
+**Was er tut:** Führt einen 5-Pass Bug Prediction Scan durch:
+- **Pass 1 — Change Understanding:** Versteht welche Funktion/Pattern geändert wurde
+- **Pass 2 — Sibling Pattern Analysis:** Sucht das gesamte Modul nach gleichen Patterns und prüft ob alle konsistent behandelt wurden
+- **Pass 3 — Type Safety at Runtime:** Prüft ob TypeScript-Typen zur tatsächlichen Laufzeitstruktur passen
+- **Pass 4 — Missing Branch Coverage:** Identifiziert ungetestete Edge Cases und Branches
+- **Pass 5 — Caller Impact Analysis:** Prüft ob alle Aufrufer der geänderten Funktion korrekt bleiben
+
+**Output:** Strukturierte `FINDING-{N}` Blöcke mit Severity/File/Category/Description/Evidence/Suggested Fix. STATUS: `SCAN_CLEAN` oder `BUGS_FOUND`.
+
+**Was er nicht tut:** Bugs eigenständig fixen — nur reporten und den Loop zurück zum Developer triggern.
+
+---
+
 ### fde-reviewer
 
-**Trigger:** Automatisch nach Tests — adversariale Code-Review vor dem Merge.
+**Trigger:** Automatisch nach dem Bug-Scanner (nur bei `SCAN_CLEAN`) — adversariale Code-Review vor dem Merge.
 
 **Was er tut:**
+- Verifiziert zuerst das Bug-Scanner-Ergebnis (`SCAN_CLEAN` = proceed, `BUGS_FOUND` = halt)
 - Prüft Code-Änderungen gegen den Vertrag (Spec-Compliance)
 - Führt die adversariale Checkliste aus:
   - Keine rohen `any`-Typen
   - Keine `console.log` in Produktion
   - Keine offenen `// TODO` ohne Task
-  - Keine N+1-Query-Patterns
   - Keine hardcodierten Secrets
-  - Kein fehlendes Error Handling bei externen Calls
   - Kein OWASP Top 10 Vulnerability
   - Tests existieren und laufen durch
 
-**Output:** Drei Sektionen — **Blocking** / **Warnings** / **Suggestions** — mit Datei+Zeile, Beschreibung, Schweregrad, empfohlenem Fix. Abschluss-STATUS: `APPROVE` oder `REQUEST_CHANGES`.
+**Output:** Drei Sektionen — **Blocking** / **Warnings** / **Suggestions** — mit Datei+Zeile, Beschreibung, Schweregrad, empfohlenem Fix. Abschluss-STATUS: `APPROVE`, `REQUEST_CHANGES_MINOR` (nur Warnings → ein Auto-Loop) oder `REQUEST_CHANGES` (Blocking → hält an).
 
 **Was er nicht tut:** Code umschreiben (nur berichten), Stilpräferenzen blockieren
 
@@ -235,10 +251,13 @@ fde-developer
     |  Code-Änderungen + QA-Ergebnis + Handoff-Note in tasks/notes.md
     v
 fde-tester
-    |  Tests (Red→Green) + Handoff-Note in tasks/notes.md
+    |  Tests (Red→Green) + Coverage-Gaps + Handoff-Note in tasks/notes.md
+    v
+fde-bug-scanner
+    |  5-Pass Scan + FINDING-Blöcke + STATUS: SCAN_CLEAN | BUGS_FOUND
     v
 fde-reviewer
-    |  STATUS (APPROVE/REQUEST_CHANGES) + Handoff-Note
+    |  STATUS: APPROVE | REQUEST_CHANGES_MINOR | REQUEST_CHANGES + Handoff-Note
     v
 fde-documenter
 ```
@@ -281,11 +300,12 @@ Leonidas hat zwei Aufgaben:
 
 ## 7. Global Specialists
 
-Diese 11 Agenten stehen nach `install` global in jedem Projekt zur Verfügung. Sie werden situativ nach Bedarf aufgerufen:
+Diese 12 Agenten stehen nach `install` global in jedem Projekt zur Verfügung. Sie werden situativ nach Bedarf aufgerufen:
 
 | Agent | Wofür aufrufen |
 |-------|---------------|
-| **architect-review** | High-level Architektur-Analyse und Empfehlungen |
+| **architect-reviewer** | High-level Architektur-Analyse und Empfehlungen |
+| **archivist** | Wiki-Pflege: Einträge kompilieren, Backlinks, Intake aus Raw-Notizen |
 | **backend-architect** | Backend-Design (APIs, Services, Datenbank-Schema) |
 | **code-reviewer** | Ad-hoc Code-Review einzelner Dateien oder Diffs |
 | **database-admin** | Datenbank-Optimierung, Query-Performance, Migrations |
@@ -318,10 +338,14 @@ Leonidas (aktuelle Session, Orchestrator)
   ├── Phase 2: @fde-planner spawnen → STATUS: READY_FOR_DEVELOPER validieren
   ├── Phase 3: [Optional: security-auditor / database-admin / ui-ux-designer]
   ├── Phase 4: @fde-developer spawnen → STATUS: READY_FOR_TESTER validieren
-  ├── Phase 5: [Optional: expert-troubleshooter bei BUILD_FAILED]
+  ├── Phase 5: [Optional: expert-troubleshooter bei BUILD_FAILED, max 2 Retries]
   ├── Phase 6: @fde-tester spawnen → STATUS: TESTS_PASSING validieren
   ├── Phase 7: [Optional: test-automator bei INFRA_MISSING]
-  ├── Phase 8: @fde-reviewer spawnen → STATUS: APPROVE validieren
+  ├── Phase 7.5: @fde-bug-scanner spawnen → STATUS: SCAN_CLEAN | BUGS_FOUND
+  │              Bei BUGS_FOUND: Loop zurück zu Phase 4 (max 2x), dann HALT
+  │              Severity-Routing: LOW → weiter, MEDIUM → nur Developer, HIGH → voller Loop
+  ├── Phase 8: @fde-reviewer spawnen → STATUS: APPROVE | REQUEST_CHANGES_MINOR | REQUEST_CHANGES
+  │              Bei REQUEST_CHANGES_MINOR: ein Auto-Loop Developer → re-review
   └── Phase 9: @fde-documenter spawnen → finales Cleanup
 ```
 
@@ -414,6 +438,25 @@ Jeder Agent schreibt eine maschinenlesbare **STATUS-Zeile** in `tasks/notes.md`.
 
 ---
 
+### `/wiki`
+
+**Was es ist:** Wissensmanagement-System nach Karpathy's LLM Wiki-Methode.
+
+**Subcommands:**
+```bash
+/wiki compile    # Raw-Notizen aus raw/ zu strukturierten Wiki-Einträgen kompilieren
+/wiki sync       # Wiki-Index (wiki/index.md) aktualisieren
+/wiki query <X>  # Wiki nach einem Thema durchsuchen
+/wiki lint       # Einträge auf Vollständigkeit und Backlinks prüfen
+/wiki intake     # Externe Docs (URLs, PDFs) via context7 aufnehmen
+```
+
+**Wie es funktioniert:** Rohe Recherche-Notizen landen in `raw/research/` oder `raw/drafts/`. Der **archivist**-Agent kompiliert daraus strukturierte Einträge in `wiki/concepts/` und `wiki/sources/`. Agenten prüfen das Wiki, bevor sie von Grund auf recherchieren.
+
+**Wann nutzen:** Wenn du Bibliotheks-Docs, API-Patterns oder Architektur-Entscheidungen dauerhaft im Projekt verankern willst.
+
+---
+
 ### `/mcp-builder`
 
 **Aufruf:**
@@ -466,17 +509,21 @@ So sieht ein typischer Entwicklungs-Session aus:
 6. fde-tester:
    → Schreibt failing Tests (Red)
    → Verifiziert Green-Phase
-   → Schreibt Coverage-Report
+   → Schreibt Coverage-Report + Coverage-Gaps
 
-7. fde-reviewer:
+7. fde-bug-scanner:
+   → 5-Pass Bug Prediction Scan
+   → STATUS: SCAN_CLEAN (weiter) oder BUGS_FOUND (Loop zurück zu Developer)
+
+8. fde-reviewer:
    → Adversariale Checkliste
    → STATUS: APPROVE (oder REQUEST_CHANGES mit konkreten Punkten)
 
-8. fde-documenter:
+9. fde-documenter:
    → Updated README.md mit Auth-Doku
    → Updated CHANGELOG.md
 
-9. Du: "/commit"
+10. Du: "/commit"
    → Conventional Commit wird erstellt
 ```
 
@@ -594,7 +641,7 @@ Projekt-spezifische Agenten kennzeichnen sich durch tiefes Wissen über die Ziel
 
 3. Leonidas:
    → Liest das Recon-Profil aus repo-profiles/
-   → Erstellt agents/projects/mein-projekt/ mit allen 5 Rollen
+   → Erstellt agents/projects/mein-projekt/ mit allen 6 Rollen
    → Bettet ≥ 4 repo-spezifische Fakten in jeden Agenten ein
    → Führt die 12-Punkte-Checklist aus
    → Updated CLAUDE.md und CHANGELOG.md
@@ -617,18 +664,20 @@ spartan-forge/
 ├── agents/
 │   ├── _shared/
 │   │   └── file-obligations.md   # Geteilte Pflichten aller Agenten
-│   ├── generic/                  # Generisches FDE-Team (5 Rollen)
+│   ├── generic/                  # Generisches FDE-Team (6 Rollen)
 │   │   ├── planner/agent.md
 │   │   ├── developer/agent.md
 │   │   ├── tester/agent.md
+│   │   ├── bug-scanner/agent.md
 │   │   ├── reviewer/agent.md
 │   │   └── documenter/agent.md
 │   └── projects/                 # Repo-spezifische Gruppen (von Leonidas erstellt)
 │       └── <projekt-name>/
 │           └── <rolle>/agent.md
 │
-├── global-agents/               # 11 Cross-cutting Specialists
+├── global-agents/               # 12 Cross-cutting Specialists
 │   ├── architect-reviewer.md
+│   ├── archivist.md
 │   ├── backend-architect.md
 │   ├── code-reviewer.md
 │   ├── database-admin.md
@@ -647,7 +696,8 @@ spartan-forge/
 │   ├── e2e.md
 │   ├── repo-recon.md
 │   ├── mcp-builder.md
-│   └── leonidas.md
+│   ├── leonidas.md
+│   └── wiki.md
 │
 ├── repo-profiles/               # Recon-Ergebnisse pro Repo (von /repo-recon erstellt)
 │   └── <projekt-name>.md
@@ -659,6 +709,15 @@ spartan-forge/
 │       ├── todo.md.template
 │       ├── notes.md.template
 │       └── lessons.md.template
+│
+├── raw/                         # Rohe Wissensbasis (nie gelöscht durch uninstall)
+│   ├── research/                # Recherche-Notizen für Wiki-Kompilierung
+│   └── drafts/                  # Entwürfe für Wiki-Kompilierung
+│
+├── wiki/                        # Strukturiertes Wiki (Karpathy-Methode)
+│   ├── index.md                 # Auto-generierter Index
+│   ├── concepts/                # Allgemeine Wissenseinträge
+│   └── sources/                 # Bibliotheks- und API-Dokumentation
 │
 ├── foundry-lessons.md           # Foundry-weites institutionelles Gedächtnis
 ├── sync.ts                      # CLI-Tool
@@ -677,7 +736,7 @@ spartan-forge/
 |---------|-----------|
 | **FDE** | Forward Deployed Engineer — Arbeitsweise eines KI-Agenten als Senior-Engineer |
 | **Foundry** | spartan-forge selbst — die "Fabrik" die Agenten produziert und deployt |
-| **Agent Group** | Eine Sammlung von Agenten für ein spezifisches Projekt (z.B. 5 FDE-Rollen) |
+| **Agent Group** | Eine Sammlung von Agenten für ein spezifisches Projekt (z.B. 6 FDE-Rollen) |
 | **Generic** | Die Standard-FDE-Gruppe ohne Projekt-spezifisches Wissen |
 | **Sync** | Deploy von spartan-forge in ein Ziel-Repo |
 | **Install** | Globale Installation von Agents + Commands nach `~/.claude/` |
